@@ -1,0 +1,140 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Store {
+  id         String      @id @default(uuid())
+  name       String
+  userId     String
+  billboards Billboard[] @relation("StoreToBillboard")
+  category   Category[]  @relation("StoreToCategory")
+  color      Color[]     @relation("StoreToColor")
+  size       Size[]      @relation("StoreToSize")
+  product    Product[]   @relation("StoreToProduct")
+  order      Order[]     @relation("StoreToOrder")
+  createAt   DateTime    @default(now())
+  updateAt   DateTime    @updatedAt
+}
+
+model Billboard {
+  id       String     @id @default(uuid())
+  storeId  String
+  store    Store      @relation("StoreToBillboard", fields: [storeId], references: [id])
+  category Category[] @relation("BillboardToCategory")
+  label    String
+  imageUrl String
+  createAt DateTime   @default(now())
+  updateAt DateTime   @updatedAt
+
+  @@index([storeId])
+}
+
+model Category {
+  id          String    @id @default(uuid())
+  storeId     String
+  store       Store     @relation("StoreToCategory", fields: [storeId], references: [id])
+  billboardId String
+  billboard   Billboard @relation("BillboardToCategory", fields: [billboardId], references: [id])
+  name        String
+  createAt    DateTime  @default(now())
+  updateAt    DateTime  @updatedAt
+  Product     Product[] @relation("CategoryToProduct")
+
+  @@index([storeId])
+  @@index([billboardId])
+}
+
+model Size {
+  id       String    @id @default(uuid())
+  storeId  String
+  store    Store     @relation("StoreToSize", fields: [storeId], references: [id])
+  value    String
+  name     String
+  createAt DateTime  @default(now())
+  updateAt DateTime  @updatedAt
+  Product  Product[]
+
+  @@index([storeId])
+}
+
+model Color {
+  id       String    @id @default(uuid())
+  storeId  String
+  store    Store     @relation("StoreToColor", fields: [storeId], references: [id])
+  value    String
+  name     String
+  createAt DateTime  @default(now())
+  updateAt DateTime  @updatedAt
+  Product  Product[]
+
+  @@index([storeId])
+}
+
+model Product {
+  id         String      @id @default(uuid())
+  storeId    String
+  store      Store       @relation("StoreToProduct", fields: [storeId], references: [id])
+  categoryId String
+  category   Category    @relation("CategoryToProduct", fields: [categoryId], references: [id])
+  sizeId     String
+  size       Size        @relation(fields: [sizeId], references: [id])
+  colorId    String
+  color      Color       @relation(fields: [colorId], references: [id])
+  name       String
+  price      Decimal
+  isFeatured Boolean     @default(false)
+  isArchived Boolean     @default(false)
+  createAt   DateTime    @default(now())
+  updateAt   DateTime    @updatedAt
+  images     Image[]
+  orderItem  OrderItem[]
+
+  @@index([colorId])
+  @@index([sizeId])
+  @@index([categoryId])
+  @@index([storeId])
+}
+
+model Image {
+  id        String   @id @default(uuid())
+  productId String
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  url       String
+  createAt  DateTime @default(now())
+  updateAt  DateTime @updatedAt
+
+  @@index([productId])
+}
+
+model Order {
+  id        String      @id @default(uuid())
+  storeId   String
+  store     Store       @relation("StoreToOrder", fields: [storeId], references: [id])
+  isPaid    Boolean     @default(false)
+  userId    String
+  name      String      @default("")
+  phone     String      @default("")
+  address   String      @default("")
+  createAt  DateTime    @default(now())
+  updateAt  DateTime    @updatedAt
+  orderItem OrderItem[]
+
+  @@index([storeId])
+}
+
+model OrderItem {
+  id        String  @id @default(uuid())
+  orderId   String
+  order     Order   @relation(fields: [orderId], references: [id])
+  productId String
+  product   Product @relation(fields: [productId], references: [id])
+  quantity  Int     @default(0)
+}
